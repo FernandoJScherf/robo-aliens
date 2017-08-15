@@ -6,45 +6,54 @@ SDL_Window* gWindow = NULL;
 //The window renderer:
 SDL_Renderer* gRenderer = NULL;
 
-SpriteAnimation LoadAnimation(char* file, int spriteWidth, int spriteHeight,
-								int frameFirst, int frameQuant, int8_t framesPerSecond)
+SDL_Texture* LoadTexture(char* file)
 {
-	SpriteAnimation animation;
 	//Load image in file:
 	SDL_Surface* loadedSurface = IMG_Load(file);
 	if(loadedSurface == NULL)
 		printf("IMG_Load failed! Unable to load image %s! IMG_GetError(): %s\n", file, IMG_GetError());
 	//The final texture:
-	animation.texture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface); //Will be null if texture couldn't be created.
-	
-	animation.textureWidth = loadedSurface->w;
-	
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface); //Will be null if texture couldn't be created.
 	//Get rid of the surface (That we wont use anymore):
 	SDL_FreeSurface(loadedSurface);
-	if(animation.texture == NULL)
+	if(texture == NULL)
 		printf("SDL_CreateTextureFromSurface failed! Unable to create texture from %s! SDL_GetError(): %s\n", file, SDL_GetError());
+	return texture;
+}	//Must be paired with a SDL_DestroyTexture(texture) always.
 
-	animation.spriteWidth = spriteWidth;
-	animation.spriteHeight = spriteHeight;
-	animation.frameFirst = frameFirst;
-	animation.frameQuant = frameQuant;
-	animation.framesPerSecond = framesPerSecond;
-	return animation;
-}
-
-Entity MakeEntity(SpriteAnimation* animation, float x, float y, int xVel, int yVel/*, SDL_Rect colBox*/)
+SpriteAnimation* LoadAnimation(SDL_Texture* texture, int spriteWidth, int spriteHeight,
+								int frameFirst, int frameQuant)
 {
-	Entity entity;
-	entity.state = 0;
-	entity.animation = animation;
-	entity.animFrameNow = 0;
-	entity.x = x;
-	entity.y = y;
-	entity.xVel = xVel;
-	entity.yVel = yVel;
-//	entity.colBox = colBox;
+	int textureWidth;
+	SDL_QueryTexture(texture, NULL, NULL, &textureWidth, NULL);
+	
+	SpriteAnimation* animation = malloc(sizeof(SpriteAnimation));
+	
+	animation->texture 			= texture;
+	animation->textureWidth 	= textureWidth;
+	animation->spriteWidth 		= spriteHeight;
+	animation->spriteHeight 	= spriteWidth;
+	animation->frameFirst 		= frameFirst;
+	animation->frameQuant 		= frameQuant;
+	
+	return animation;
+}	//Must be paired with a free(animation) always.
+
+Entity* MakeEntity(SpriteAnimation* animation, int8_t framesPerSecond, float x, float y, int xVel, int yVel/*, SDL_Rect colBox*/)
+{
+	Entity* entity = malloc(sizeof(Entity));
+	
+	entity->state 				= 0;
+	entity->animation 			= animation;
+	entity->animFrameNow 		= 0;
+	entity->animTimeAcum 		= 0;
+	entity->animFramesPerSecond = framesPerSecond;
+	entity->x					= x;
+	entity->y					= y;
+	entity->xVel				= xVel;
+	entity->yVel 				= yVel;
 	return entity;
-}
+}	//Must be paired with a free(entity) always.
 
 void RenderEntity(Entity* entity, double dT)
 {
@@ -64,9 +73,9 @@ void RenderEntity(Entity* entity, double dT)
 	SDL_RenderCopy(gRenderer, Lanimation.texture, &srcrect, &dstrect);
 	
 	//Go to next frame o go back to the first one?:
-	int16_t LframeLast = (double)Lanimation.framesPerSecond * entity->animTimeAcum; // LtimeAcum / (1 / framespersecond)
+	int16_t LframeLast = (double)entity->animFramesPerSecond * entity->animTimeAcum; // LtimeAcum / (1 / framespersecond)
 	entity->animTimeAcum += dT;
-	int16_t LframeNow = (double)Lanimation.framesPerSecond * entity->animTimeAcum;
+	int16_t LframeNow = (double)entity->animFramesPerSecond * entity->animTimeAcum;
 	if(LframeLast != LframeNow)
 		entity->animFrameNow++;
 	
@@ -82,34 +91,40 @@ TTF_Font* LoadFont(char* file, int8_t size)
 	return font;	//Will return NULL if font wasn't correctly loaded.
 }
 
-Text MakeText(char* toWrite, TTF_Font* font, SDL_Color color, float x, float y)
+Text* MakeText(char* toWrite, TTF_Font* font, SDL_Color color, float x, float y)
 {
-	Text text;
+	Text* text = malloc(sizeof(Text));
 	//Make text surface:
 	SDL_Surface* textSurface = TTF_RenderText_Solid(font, toWrite, color);
 	if(textSurface == NULL)
 		printf( "TTF_RenderText_Solid failed! TTF_GetError(): %s\n", TTF_GetError());
 	
 	//Create texture from surface:
-	text.texture = SDL_CreateTextureFromSurface(gRenderer, textSurface); //Will be null if texture couldn't be created.
+	text->texture = SDL_CreateTextureFromSurface(gRenderer, textSurface); //Will be null if texture couldn't be created.
 	
-	if(text.texture == NULL)
+	if(text->texture == NULL)
 		printf( "SDL_CreateTextureFromSurface failed! TTF_GetError(): %s\n", TTF_GetError());
 	
-	text.textRect.x = x;
-	text.textRect.y = y;
-	text.textRect.w = textSurface->w;
-	text.textRect.h = textSurface->h;
+	text->textRect.x = x;
+	text->textRect.y = y;
+	text->textRect.w = textSurface->w;
+	text->textRect.h = textSurface->h;
 	
 	//Get rid of the surface (That we wont use anymore):
 	SDL_FreeSurface(textSurface);	
 	
 	return text;
-}
+}	//MUST BE ALWAYS PAIRED WITH DestroyText(text)
 
 void RenderText(Text* text)
 {
 	SDL_RenderCopy(gRenderer, text->texture, NULL, &text->textRect);
+}
+
+void DestroyText(Text* text)
+{
+	SDL_DestroyTexture(text->texture);
+	free(text);
 }
 
 void UpdateAndRender(double dT)

@@ -62,8 +62,6 @@ int main( int argc, char* args[] )
 	//Set text color:
 	SDL_Color textColor = { 0, 0, 0, 255 };
 	
-	char fpsStr[20];
-	Text fpsText;
 	/////////		
 		
 	uint8_t refreshDiv = 1;
@@ -159,10 +157,17 @@ int main( int argc, char* args[] )
 		//Clear Screen:
 		SDL_RenderClear(gRenderer);
 		
+		//Call the update and render function where THE MAGIC HAPPENS:
 		UpdateAndRender(dT);
+		
+		//Show framerate on screen:
+		char fpsStr[20];
 		sprintf(fpsStr, "%.6f", 1/tFrameRealProm);
-		fpsText = MakeText(fpsStr, textFont, textColor, 1, SCREEN_HEIGHT - TTF_FontHeight(textFont) - 1);
-		RenderText(&fpsText);
+		//RenderText(MakeText(fpsStr, textFont, textColor, 1, SCREEN_HEIGHT - TTF_FontHeight(textFont) - 1));
+		Text* fpsText = MakeText(fpsStr, textFont, textColor, 10, 10);
+		RenderText(fpsText);
+		DestroyText(fpsText);
+		
 		/////////TO DO: Show fps depending on some conditional.
 		
 		if(	!vsyncOn)		//If Vsync is off, cap framerate!
