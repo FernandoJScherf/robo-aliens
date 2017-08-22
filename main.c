@@ -47,8 +47,6 @@ int main( int argc, char* args[] )
 		printf("SDL_CreateRenderer failed! SDL_GetError(): %s\n", SDL_GetError());
 		return 3;
 	}
-	//Initialize renderer color:
-	SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
 	 //Initialize SDL_ttf
 	if(TTF_Init() == -1 )
 	{
@@ -108,37 +106,44 @@ int main( int argc, char* args[] )
 		{
 			if(e.type == SDL_QUIT)
 				goOn = 0;
-			else if(e.type == SDL_KEYDOWN)
+			else if(e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
 			{
 				switch(e.key.keysym.sym)
 				{
 					case SDLK_LEFT:
-						gKeyStates.left = 1;
+						gKeyStates.left = e.key.state;
 						break;
 					case SDLK_RIGHT:
-						gKeyStates.right = 1;
+						gKeyStates.right = e.key.state;
 						break;
 					case SDLK_SPACE:
-						gKeyStates.jump = 1;
+						gKeyStates.jump = e.key.state;
 						break;
 				}
 			}
-			else if(e.type == SDL_KEYUP)
+			else if(e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP)
 			{
-				switch(e.key.keysym.sym)
+				switch(e.button.button)
 				{
-					case SDLK_LEFT:
-						gKeyStates.left = 0;
+					case SDL_BUTTON_LEFT:
+						gMouseStates.left = e.button.state;
 						break;
-					case SDLK_RIGHT:
-						gKeyStates.right = 0;
+					case SDL_BUTTON_RIGHT:
+						gMouseStates.right = e.button.state;
 						break;
-					case SDLK_SPACE:
-						gKeyStates.jump = 0;
+					case SDL_BUTTON_MIDDLE:
+						gMouseStates.middle = e.button.state;
 						break;
 				}
+				gMouseStates.x = e.button.x;
+				gMouseStates.y = e.button.y;
 			}
 		}
+		
+		//~ if(gMouseStates.left == SDL_PRESSED)
+			//~ printf("Pressed %i %i\n", gMouseStates.x, gMouseStates.y);
+		//~ else
+			//~ printf("Not Pressed\n");
 		
 		//CALCULATE REAL TIME BETWEEN FRAMES AND FRAMERATE:	
 		tActualReal = SDL_GetPerformanceCounter();
@@ -155,6 +160,7 @@ int main( int argc, char* args[] )
 		}
 		
 		//Clear Screen:
+		SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255); //Reset the render draw color every frame.
 		SDL_RenderClear(gRenderer);
 		
 		//Call the update and render function where THE MAGIC HAPPENS:

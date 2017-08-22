@@ -8,7 +8,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 	
 	static SDL_Texture* animTexture;
 	static SpriteAnimation* anim;
-	static Entity** entArray;
+	static SpriteEntity** entArray;
 	
 	if(subState == Load)
 	{
@@ -21,10 +21,10 @@ StatesEnum UpdateAndRenderTest(double dT)
 		animTexture = LoadTexture("Face.pbm");
 		anim = LoadAnimation(animTexture, 48, 48, 0, 30);
 		
-		entArray = calloc(MAX_ENTITIES, sizeof(Entity*));	//Allocate the space needed and initialize all to zero.
+		entArray = calloc(MAX_ENTITIES, sizeof(SpriteEntity*));	//Allocate the space needed and initialize all to zero.
 	}
 	//Every frame:
-	if(gKeyStates.jump == 1)
+	if(gKeyStates.jump == SDL_PRESSED)
 	{
 		//Add new (semi-randomized) entity to the array:
 		int lx = rand() % SCREEN_WIDTH;		//Generate "random" starting position.
@@ -36,7 +36,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 		{
 			if(entArray[i] == 0)	//If we found an empty space in the array.
 			{
-				entArray[i] = MakeEntity(anim, rand() % 15, lx, ly, lxVel, lyVel);
+				entArray[i] = MakeSpriteEntity(anim, rand() % 15, lx, ly, lxVel, lyVel);
 				break;
 			}
 		}
@@ -71,9 +71,12 @@ StatesEnum UpdateAndRenderTest(double dT)
 				entArray[i]->y = SCREEN_HEIGHT - entArray[i]->animation->spriteHeight;
 			}
 			
-			RenderEntity(entArray[i], dT);
+			RenderSpriteEntity(entArray[i], dT);
+			
 		}
 	}
+	
+	hlineRGBA(gRenderer, 0, SCREEN_WIDTH, SCREEN_HEIGHT / 2, 0 , 0 , 0, 255);
 	
 	if(subState == Exit)
 	{
@@ -94,7 +97,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 	//~ static SDL_Color textColor = { 0, 0, 0, 255 };
 	//~ static Text helloWorldText;
 	
-	//~ static Entity* ent = NULL;
+	//~ static SpriteEntity* ent = NULL;
 	//~ static int entQuantNow = 0;
 	
 	//~ if(subState == Load)
@@ -104,7 +107,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 		//~ caveAnim = malloc(sizeof(SpriteAnimation));
 		//~ *caveAnim = LoadAnimation("Face.pbm", 48, 48, 6, 7, 4);
 		
-		//~ ent = malloc(MAX_ENTITIES * sizeof(Entity));
+		//~ ent = malloc(MAX_ENTITIES * sizeof(SpriteEntity));
 		//~ //Open the font
 		//~ textFont = LoadFont("synchronizer_nbp.ttf", 24);
 				
@@ -119,7 +122,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 		//~ int lxVel = rand() % 30;
 		//~ int lyVel = rand() % 30;
 		//~ //Add new entity to the list:
-		//~ ent[entQuantNow] = MakeEntity(caveAnim, lx, ly, lxVel, lyVel);
+		//~ ent[entQuantNow] = MakeSpriteEntity(caveAnim, lx, ly, lxVel, lyVel);
 		//~ entQuantNow++;
 		//~ //If we surpass the limit, start overwriting.
 		//~ if(entQuantNow == MAX_ENTITIES)
@@ -154,7 +157,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 			//~ ent[i].y = SCREEN_HEIGHT - ent[i].animation->spriteHeight;
 		//~ }
 		
-		//~ RenderEntity(ent+i, dT);
+		//~ RenderSpriteEntity(ent+i, dT);
 	//~ }
 		
 	//~ //Show actual number of entities on screen.
@@ -192,7 +195,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 	//~ static SDL_Color textColor = { 0, 0, 0, 255 };
 	//~ static Text helloWorldText;
 	
-	//~ static Entity ent[MAX_ENTITIES];
+	//~ static SpriteEntity ent[MAX_ENTITIES];
 	//~ static int8_t entQuantNow = 0;
 	
 	//~ if(subState == Load)
@@ -215,7 +218,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 		//~ int lxVel = rand() % 30;
 		//~ int lyVel = rand() % 30;
 		//~ //Add new entity to the list:
-		//~ ent[entQuantNow] = MakeEntity(&caveAnim, lx, ly, lxVel, lyVel);
+		//~ ent[entQuantNow] = MakeSpriteEntity(&caveAnim, lx, ly, lxVel, lyVel);
 		//~ entQuantNow++;
 		//~ //If we surpass the limit, start overwriting.
 		//~ if(entQuantNow == MAX_ENTITIES)
@@ -250,7 +253,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 			//~ ent[i].y = SCREEN_HEIGHT - ent[i].animation->spriteHeight;
 		//~ }
 		
-		//~ RenderEntity(ent+i, dT);
+		//~ RenderSpriteEntity(ent+i, dT);
 	//~ }
 		
 	//~ //Show actual number of entities on screen.
@@ -275,16 +278,16 @@ StatesEnum UpdateAndRenderTest(double dT)
 //{
 	//static SubStatesEnum subState = Load;
 	//static SpriteAnimation *pCaveAnim;
-	//static Entity *pCaveEnt;
+	//static SpriteEntity *pCaveEnt;
 	
 	//if(subState == Load)
 	//{
 		//pCaveAnim = malloc(sizeof(SpriteAnimation));
 		//*pCaveAnim = LoadAnimation("Face.pbm", 48, 48, 0, 5, 2);
 		
-		//pCaveEnt = malloc(sizeof(Entity));
+		//pCaveEnt = malloc(sizeof(SpriteEntity));
 		//SDL_Rect caveRect = {0, 0, pCaveAnim->spriteWidth, pCaveAnim->spriteHeight};
-		//*pCaveEnt = MakeEntity(pCaveAnim, SCREEN_WIDTH / 2, SCREEN_WIDTH / 2, caveRect);
+		//*pCaveEnt = MakeSpriteEntity(pCaveAnim, SCREEN_WIDTH / 2, SCREEN_WIDTH / 2, caveRect);
 		
 		//subState = Normal;	
 	//}
@@ -316,7 +319,7 @@ StatesEnum UpdateAndRenderTest(double dT)
 		//pCaveEnt->y = SCREEN_HEIGHT - pCaveEnt->animation->spriteHeight;
 	//}
 	
-	//RenderEntity(pCaveEnt, dT);
+	//RenderSpriteEntity(pCaveEnt, dT);
 	
 	//if(subState == Exit)
 	//{

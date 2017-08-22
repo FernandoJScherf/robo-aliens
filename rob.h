@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h> 
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 
 //Screen dimension constants
 #define SCREEN_WIDTH 640
@@ -36,7 +37,7 @@ typedef struct
 	int 				xVel;
 	int 				yVel;
 	//SDL_Rect			colBox;
-} Entity;
+} SpriteEntity;
 
 typedef struct
 {
@@ -47,7 +48,9 @@ typedef struct
 typedef enum
 {
 	Test,
-	Menu
+	TestShapes,
+	Menu,
+	ObjectEditor
 }StatesEnum;
 
 typedef enum
@@ -64,6 +67,15 @@ struct KeyStates
 	int8_t jump;
 }gKeyStates; 			//A GLOBAL STRUCTURE THAT HOLDS IF A PARTICULAR KEY HAS BEEN PRESSED!
 
+struct MouseStates
+{
+	int8_t 	left;
+	int8_t 	right;
+	int8_t 	middle;
+	int16_t	x;
+	int16_t y;
+}gMouseStates;			//A GLOBAL STRUCTURE THAT HOLDS IF A PARTICULAR MOUSE BUTTON HAS BEEN PRESSED, AND WHERE.
+
 SDL_Texture* LoadTexture(char* file);	//Must be paired with a SDL_DestroyTexture(texture) always.
 
 SpriteAnimation* LoadAnimation(SDL_Texture* texture, int spriteWidth, int spriteHeight,
@@ -72,10 +84,10 @@ SpriteAnimation* LoadAnimation(SDL_Texture* texture, int spriteWidth, int sprite
 
 //TO DO: OPTIMIZE int TO int8_t IF POSSIBLE!
 
-Entity* MakeEntity(SpriteAnimation* animation, int8_t framesPerSecond, float x, float y, int xVel, int yVel/*, SDL_Rect colBox*/);	//collision box y RELATIVE to the position of the entity.
+SpriteEntity* MakeSpriteEntity(SpriteAnimation* animation, int8_t framesPerSecond, float x, float y, int xVel, int yVel/*, SDL_Rect colBox*/);	//collision box y RELATIVE to the position of the entity.
 //Must be paired with a free(entity) always.
 
-void RenderEntity(Entity* entity, double dT);
+void RenderSpriteEntity(SpriteEntity* entity, double dT);
 
 TTF_Font* LoadFont(char* file, int8_t size);
 

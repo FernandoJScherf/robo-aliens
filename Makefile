@@ -1,5 +1,5 @@
 #Files to compile as part of the project:
-OBJS = main.c rob.c
+OBJS = main.c rob.c shapes.c
 
 #Compiler we are using:
 CC = gcc
@@ -9,7 +9,7 @@ CC = gcc
 COMPILER_FLAGS = -w -std=c99
 
 #Libraries we are linking against:
-LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf 
+LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_gfx
 
 #Name of our executable:
 OBJ_NAME = exec_SDL

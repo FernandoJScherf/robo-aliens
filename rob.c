@@ -1,5 +1,7 @@
 #include "rob.h"
 #include "UpdateAndRenderTest.h"
+#include "UpdateAndRenderTestShapes.h"
+#include "ObjectEditor.h"
 
 //The window we'll be rendering to:
 SDL_Window* gWindow = NULL;
@@ -39,9 +41,9 @@ SpriteAnimation* LoadAnimation(SDL_Texture* texture, int spriteWidth, int sprite
 	return animation;
 }	//Must be paired with a free(animation) always.
 
-Entity* MakeEntity(SpriteAnimation* animation, int8_t framesPerSecond, float x, float y, int xVel, int yVel/*, SDL_Rect colBox*/)
+SpriteEntity* MakeSpriteEntity(SpriteAnimation* animation, int8_t framesPerSecond, float x, float y, int xVel, int yVel/*, SDL_Rect colBox*/)
 {
-	Entity* entity = malloc(sizeof(Entity));
+	SpriteEntity* entity = malloc(sizeof(SpriteEntity));
 	
 	entity->state 				= 0;
 	entity->animation 			= animation;
@@ -55,7 +57,7 @@ Entity* MakeEntity(SpriteAnimation* animation, int8_t framesPerSecond, float x, 
 	return entity;
 }	//Must be paired with a free(entity) always.
 
-void RenderEntity(Entity* entity, double dT)
+void RenderSpriteEntity(SpriteEntity* entity, double dT)
 {
 	//TO DO: Do I really need double precision instead of just float for dT and company?
 	SpriteAnimation Lanimation = *(entity->animation);
@@ -129,13 +131,18 @@ void DestroyText(Text* text)
 
 void UpdateAndRender(double dT)
 {
-	static StatesEnum state	= Test;
+	static StatesEnum state	= ObjectEditor;
 
 	switch(state)
 	{
 		case Test:
 			state = UpdateAndRenderTest(dT);
 			break;
+		case TestShapes:
+			state = UpdateAndRenderTestShapes(dT);
+			break;
+		case ObjectEditor:
+			state = UpdateAndRenderObjectEditor(dT);
 	}
 }
 
