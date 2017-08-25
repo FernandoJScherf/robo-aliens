@@ -40,6 +40,8 @@ StatesEnum UpdateAndRenderObjectEditor(dT)
 		
 		if(CheckCollision(rectMouse, shapeArray[0]))
 			selectedShape = BOX;
+		else if (CheckCollision(rectMouse, shapeArray[1]))
+			selectedShape = CIRCLE;
 		else
 		{
 			for(int i = 0; i < MAX_SHAPES; i++)

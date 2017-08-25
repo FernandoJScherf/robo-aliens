@@ -58,6 +58,7 @@ void DestroyShape(ShapesUnion shape)
 int8_t CheckCollision(ShapesUnion shapeA, ShapesUnion shapeB)
 {
 	int8_t collided = 0;
+	
 	if(shapeA.type == BOX && shapeB.type == BOX)
 	{
 		ShapeBox* a_box = shapeA.box;
@@ -75,6 +76,46 @@ int8_t CheckCollision(ShapesUnion shapeA, ShapesUnion shapeB)
 		
 		if(a_right > b_left && a_left < b_right &&  a_bottom > b_top && a_top < b_bottom)
 			collided = 1;	//This means true.
+	}
+	else
+	{
+		ShapesUnion * a, * b;
+		if(shapeA.type == BOX)
+		{
+			a = &shapeA;
+			b = &shapeB;
+		}
+		else if(shapeB.type == BOX)
+		{
+			a = &shapeB;
+			b = &shapeA;
+		}
+		
+		if(a->type == BOX && b->type == CIRCLE)
+		{
+			ShapeBox* a_box = a->box;
+			ShapeCircle* b_cir = b->circle;
+			
+			int16_t a_left 		= a_box->x1;
+			int16_t a_right 	= a_left + a_box->width;
+			int16_t a_top		= a_box->y1;
+			int16_t a_bottom	= a_top + a_box->height;
+
+			int16_t b_xCenter	= b_cir->xC;
+			int16_t b_yCenter 	= b_cir->yC;
+			int16_t b_rad		= b_cir->rad;
+			
+			//https://yal.cc/rectangle-circle-intersection-test/ :
+			int16_t min = (b_xCenter < a_right) ? b_xCenter : a_right;
+			int16_t max = (a_left > min) ? a_left : min;
+			int16_t deltaX = b_xCenter - max;//(a_left, min(b_xCenter, a_right));
+			
+			min = (b_yCenter < a_bottom) ? b_yCenter : a_bottom;
+			max = (a_top > min) ? a_top : min;
+			int16_t deltaY = b_yCenter - max;//(a_top, min(b_yCenter, a_bottom));
+			
+			return (deltaX * deltaX + deltaY * deltaY) < (b_rad * b_rad);
+		}
 	}
 	
 	return collided;
