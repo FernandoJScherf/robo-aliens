@@ -1,12 +1,12 @@
 #include "shapes.h"
 
-ShapesUnion MakeBox(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int8_t r, int8_t g, int8_t b, int8_t a)
+ShapesUnion MakeBox(int16_t x1, int16_t y1, int16_t width, int16_t height, int8_t r, int8_t g, int8_t b, int8_t a)
 {
 	ShapeBox* box = malloc(sizeof(ShapeBox));
 	box->x1 = x1;
 	box->y1 = y1;
-	box->x2 = x2;
-	box->y2 = y2;
+	box->width = width;
+	box->height = height;
 	box->r = r;
 	box->g = g;
 	box->b = b;
@@ -38,8 +38,8 @@ ShapesUnion MakeCircle(int16_t xC, int16_t yC, int16_t rad, int8_t r, int8_t g, 
 void RenderShape(ShapesUnion shape)
 {
 	if(shape.type == BOX)
-		boxRGBA(gRenderer, shape.box->x1, shape.box->y1, shape.box->x2, shape.box->y2,
-			shape.box->r, shape.box->g, shape.box->b, shape.box->a);
+		boxRGBA(gRenderer, shape.box->x1, shape.box->y1, shape.box->width + shape.box->x1, shape.box->height + shape.box->y1,
+			shape.box->r, shape.box->g, shape.box->b, shape.box->a);	//TO DO: Could change to use directly the render rectangle function of SDL!
 	else if(shape.type == CIRCLE)
 		filledCircleRGBA(gRenderer, shape.circle->xC, shape.circle->yC, shape.circle->rad, 
 			shape.circle->r, shape.circle->g, shape.circle->b, shape.circle->a);
@@ -57,5 +57,25 @@ void DestroyShape(ShapesUnion shape)
 
 int8_t CheckCollision(ShapesUnion shapeA, ShapesUnion shapeB)
 {
+	int8_t collided = 0;
+	if(shapeA.type == BOX && shapeB.type == BOX)
+	{
+		ShapeBox* a_box = shapeA.box;
+		ShapeBox* b_box = shapeB.box;
+		
+		int16_t a_left 		= a_box->x1;
+		int16_t a_right 	= a_left + a_box->width;
+		int16_t a_top		= a_box->y1;
+		int16_t a_bottom	= a_top + a_box->height;
+
+		int16_t b_left 		= b_box->x1;
+		int16_t b_right 	= b_left + b_box->width;
+		int16_t b_top		= b_box->y1;
+		int16_t b_bottom	= b_top + b_box->height;
+		
+		if(a_right > b_left && a_left < b_right &&  a_bottom > b_top && a_top < b_bottom)
+			collided = 1;	//This means true.
+	}
 	
+	return collided;
 }

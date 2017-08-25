@@ -13,6 +13,7 @@ StatesEnum UpdateAndRenderObjectEditor(dT)
 	
 	static ShapesUnion* shapeArray;
 	
+	
 	if(subState == Load)
 	{
 		subState = Normal;		
@@ -24,11 +25,40 @@ StatesEnum UpdateAndRenderObjectEditor(dT)
 		//Every member of every element in shapeArray should be initialized to zero.
 		
 		//Make interface:
-		shapeArray[0] = MakeBox(UNI * 54, UNI * 4, UNI * 56, UNI * 6, 127, 0, 0, 255);
+		shapeArray[0] = MakeBox(UNI * 54, UNI * 4, UNI * 2, UNI * 2, 127, 0, 0, 255);
 		shapeArray[1] = MakeCircle(UNI * 55, UNI * 8, UNI, 0, 127, 0, 255);
 	}
 	
 	////////Every Frame:
+	static ShapesEnum selectedShape = NONE;
+	if(gMouseStates.left == SDL_PRESSED)
+	{
+		int8_t divisor = 2;
+		int16_t uniDiv = UNI / divisor;
+		ShapesUnion rectMouse = MakeBox(gMouseStates.x - uniDiv, gMouseStates.y - uniDiv, 
+			uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
+		
+		if(CheckCollision(rectMouse, shapeArray[0]))
+			selectedShape = BOX;
+		else
+		{
+			for(int i = 0; i < MAX_SHAPES; i++)
+			{
+				if(shapeArray[i].type == NONE)		//If we found an empty space in the array.
+				{
+					if(selectedShape == BOX)
+					{
+						shapeArray[i] = MakeBox(gMouseStates.x, gMouseStates.y, 
+							uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
+						break;
+					}
+				}
+			}
+		}
+		
+		RenderShape(rectMouse);
+		DestroyShape(rectMouse);
+	}
 	
 	//Render Interface:
 	RenderText(textShapes);

@@ -135,8 +135,11 @@ int main( int argc, char* args[] )
 						gMouseStates.middle = e.button.state;
 						break;
 				}
-				gMouseStates.x = e.button.x;
-				gMouseStates.y = e.button.y;
+			}
+			else if(e.type == SDL_MOUSEMOTION)
+			{
+				gMouseStates.x = e.motion.x;
+				gMouseStates.y = e.motion.y;
 			}
 		}
 		
