@@ -4,7 +4,7 @@
 
 #define UNI SCREEN_WIDTH / 64
 
-StatesEnum UpdateAndRenderObjectEditor(dT)
+StatesEnum UpdateAndRenderObjectEditor(double dT)
 {
 	static TTF_Font* textFont;
 	static Text* textShapes;
@@ -13,11 +13,12 @@ StatesEnum UpdateAndRenderObjectEditor(dT)
 	
 	static ShapesUnion* shapeArray;
 	
+	static float totalTimeClick = 0.0;
 	
 	if(subState == Load)
 	{
 		subState = Normal;		
-		textFont = LoadFont("synchronizer_nbp.ttf", 16);
+		textFont = LoadFont("synchronizer_nbp.ttf", 8);
 		SDL_Color textColor = { 0, 0, 0, 255 };	
 		textShapes = MakeText("Shapes", textFont, textColor, UNI * 53, UNI);
 		
@@ -31,36 +32,71 @@ StatesEnum UpdateAndRenderObjectEditor(dT)
 	
 	////////Every Frame:
 	static ShapesEnum selectedShape = NONE;
-	if(gMouseStates.left == SDL_PRESSED)
+	static int workingOnPoly;
+	if(gMouseStates.left == SDL_PRESSED)	//If just clicked or if mouse is kept being pressed.
 	{
+		
 		int8_t divisor = 2;
 		int16_t uniDiv = UNI / divisor;
 		ShapesUnion rectMouse = MakeBox(gMouseStates.x - uniDiv, gMouseStates.y - uniDiv, 
 			uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
-		
-		if(CheckCollision(rectMouse, shapeArray[0]))
-			selectedShape = BOX;
-		else if (CheckCollision(rectMouse, shapeArray[1]))
-			selectedShape = CIRCLE;
-		else
-		{
-			for(int i = 0; i < MAX_SHAPES; i++)
+		if(totalTimeClick == 0.0)
+		{			
+			printf("totalTimeClick %f\n", totalTimeClick);
+			if(CheckCollision(rectMouse, shapeArray[0]))
 			{
-				if(shapeArray[i].type == NONE)		//If we found an empty space in the array.
+				printf("Selected the constructiong polygon tool");
+				for(int i = 0; i < MAX_SHAPES; i++)
 				{
-					if(selectedShape == BOX)
+					if(shapeArray[i].type == NONE)		//If we found an empty space in the array.
 					{
-						shapeArray[i] = MakeBox(gMouseStates.x, gMouseStates.y, 
-							uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
-						break;
+						workingOnPoly = i;
+						shapeArray[i] = MakePoly(NULL, NULL, 0, 0, 127, 127, 127, 255);
+						break;		//I FORGOT TO PUT THIS BREAK WHAT THE FUUUUUUCK.
+					}
+				}
+				selectedShape = BOX;
+			}
+			else if (CheckCollision(rectMouse, shapeArray[1]))
+				selectedShape = CIRCLE;
+			else
+			{
+				printf("Click outside of button.\n");
+				for(int i = 0; i < MAX_SHAPES; i++)
+				{
+					printf("shapeArray[i].type == %i\n", shapeArray[i].type);
+					if(shapeArray[i].type == NONE)		//If we found an empty space in the array.
+					{
+						printf("Found empty shape.\n");
+						if(selectedShape == BOX)
+						{
+							SDL_Color textColor = { 127, 0, 0, 255 };	
+							textShapes = MakeText("Constructing Polygon", textFont, textColor, UNI * 53, UNI);
+							AddPointToPoly(shapeArray[workingOnPoly].poly, gMouseStates.x, gMouseStates.y);
+							int16_t w = uniDiv * divisor;
+							int16_t h = w;
+							shapeArray[i] = MakeBox(gMouseStates.x - w / 2, gMouseStates.y - h / 2, 
+								w, h, 127, 0, 0, 255);
+							break;
+						}
+						else if(selectedShape == CIRCLE)
+						{
+							shapeArray[i] = MakeCircle(gMouseStates.x, gMouseStates.y, 
+								uniDiv * divisor, 127, 0, 0, 255);
+							break;
+						}
 					}
 				}
 			}
+			
 		}
+		totalTimeClick += dT;
 		
 		RenderShape(rectMouse);
 		DestroyShape(rectMouse);
 	}
+	else
+		totalTimeClick = 0.0;
 	
 	//Render Interface:
 	RenderText(textShapes);
@@ -70,6 +106,7 @@ StatesEnum UpdateAndRenderObjectEditor(dT)
 		if(shapeArray[i].type != NONE)
 			RenderShape(shapeArray[i]);		//If we found an occupied space in the array.
 	}
+	
 	
 	if(subState == Exit)
 	{
@@ -91,6 +128,99 @@ StatesEnum UpdateAndRenderObjectEditor(dT)
 	
 	return ObjectEditor;
 }
+//~ #include "shapes.h"
+
+//~ #define MAX_SHAPES 500
+
+//~ #define UNI SCREEN_WIDTH / 64
+
+//~ StatesEnum UpdateAndRenderObjectEditor(dT)
+//~ {
+	//~ static TTF_Font* textFont;
+	//~ static Text* textShapes;
+	
+	//~ static SubStatesEnum subState = Load;
+	
+	//~ static ShapesUnion* shapeArray;
+	
+	
+	//~ if(subState == Load)
+	//~ {
+		//~ subState = Normal;		
+		//~ textFont = LoadFont("synchronizer_nbp.ttf", 16);
+		//~ SDL_Color textColor = { 0, 0, 0, 255 };	
+		//~ textShapes = MakeText("Shapes", textFont, textColor, UNI * 53, UNI);
+		
+		//~ shapeArray = calloc(MAX_SHAPES, sizeof(ShapesUnion));
+		//~ //Every member of every element in shapeArray should be initialized to zero.
+		
+		//~ //Make interface:
+		//~ shapeArray[0] = MakeBox(UNI * 54, UNI * 4, UNI * 2, UNI * 2, 127, 0, 0, 255);
+		//~ shapeArray[1] = MakeCircle(UNI * 55, UNI * 8, UNI, 0, 127, 0, 255);
+	//~ }
+	
+	//~ ////////Every Frame:
+	//~ static ShapesEnum selectedShape = NONE;
+	//~ if(gMouseStates.left == SDL_PRESSED)
+	//~ {
+		//~ int8_t divisor = 2;
+		//~ int16_t uniDiv = UNI / divisor;
+		//~ ShapesUnion rectMouse = MakeBox(gMouseStates.x - uniDiv, gMouseStates.y - uniDiv, 
+			//~ uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
+		
+		//~ if(CheckCollision(rectMouse, shapeArray[0]))
+			//~ selectedShape = BOX;
+		//~ else if (CheckCollision(rectMouse, shapeArray[1]))
+			//~ selectedShape = CIRCLE;
+		//~ else
+		//~ {
+			//~ for(int i = 0; i < MAX_SHAPES; i++)
+			//~ {
+				//~ if(shapeArray[i].type == NONE)		//If we found an empty space in the array.
+				//~ {
+					//~ if(selectedShape == BOX)
+					//~ {
+						//~ shapeArray[i] = MakeBox(gMouseStates.x, gMouseStates.y, 
+							//~ uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
+						//~ break;
+					//~ }
+				//~ }
+			//~ }
+		//~ }
+		
+		//~ RenderShape(rectMouse);
+		//~ DestroyShape(rectMouse);
+	//~ }
+	
+	//~ //Render Interface:
+	//~ RenderText(textShapes);
+	//~ vlineRGBA(gRenderer, UNI * 52, 0, SCREEN_HEIGHT, 0, 0, 0, 255);
+	//~ for(int i = 0; i < MAX_SHAPES; i++)
+	//~ {
+		//~ if(shapeArray[i].type != NONE)
+			//~ RenderShape(shapeArray[i]);		//If we found an occupied space in the array.
+	//~ }
+	
+	//~ if(subState == Exit)
+	//~ {
+		//~ TTF_CloseFont(textFont);
+		//~ DestroyText(textShapes);
+		//~ for(int i = 0; i < MAX_SHAPES; i++)
+		//~ {
+			//~ if(shapeArray[i].type != NONE)
+				//~ DestroyShape(shapeArray[i]);
+		//~ }
+		//~ free(shapeArray);
+		
+		//~ textFont = NULL;
+		//~ textShapes = NULL;
+		//~ shapeArray = NULL;
+		
+		//~ subState = Load;		
+	//~ }
+	
+	//~ return ObjectEditor;
+//~ }
 
 
 //~ #include "rob.h"

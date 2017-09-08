@@ -145,5 +145,3 @@ void UpdateAndRender(double dT)
 			state = UpdateAndRenderObjectEditor(dT);
 	}
 }
-
-

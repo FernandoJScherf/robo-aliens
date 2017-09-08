@@ -67,6 +67,8 @@ struct KeyStates
 	int8_t jump;
 }gKeyStates; 			//A GLOBAL STRUCTURE THAT HOLDS IF A PARTICULAR KEY HAS BEEN PRESSED!
 
+
+////////////////////////Structs and functions for the mouse state:
 struct MouseStates
 {
 	int8_t 	left;
@@ -75,6 +77,7 @@ struct MouseStates
 	int16_t	x;
 	int16_t y;
 }gMouseStates;			//A GLOBAL STRUCTURE THAT HOLDS IF A PARTICULAR MOUSE BUTTON HAS BEEN PRESSED, AND WHERE.
+
 
 SDL_Texture* LoadTexture(char* file);	//Must be paired with a SDL_DestroyTexture(texture) always.
 

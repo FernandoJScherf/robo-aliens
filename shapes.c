@@ -35,6 +35,55 @@ ShapesUnion MakeCircle(int16_t xC, int16_t yC, int16_t rad, int8_t r, int8_t g, 
 	return shape;
 }	//Must be paired with a free(ShapeCircle*) always.
 
+
+//int16_t* pX, int16_t* pY, int8_t pN, can be passed as NULL, NULL and 0, and in that case, an "EMPTY POLYGON" is made.
+ShapesUnion MakePoly(int16_t* pX, int16_t* pY, int8_t pN, int8_t filled, int8_t r, int8_t g, int8_t b, int8_t a)
+{
+	ShapePoly* poly = malloc(sizeof(ShapePoly));
+	
+	if(pX == NULL || pY == NULL || pN == 0)
+	{
+		poly->pX = NULL;
+		poly->pY = NULL;
+		pN = 0;
+	}
+	else
+	{
+		poly->pX = malloc(sizeof(int16_t) * pN);
+		poly->pY = malloc(sizeof(int16_t) * pN);
+		
+		for(int8_t i = 0; i < pN; i++)		//Copy array of points passed to array of points pointed to in the struct.
+		{
+			poly->pX[i] = pX[i];
+			poly->pY[i] = pY[i];
+		}
+	}
+	
+	poly->pN = pN;
+	poly->filled = filled;
+	poly->r = r;
+	poly->g = g;
+	poly->b = b;
+	poly->a = a;
+	
+	ShapesUnion shape;
+	shape.type = POLY;
+	shape.poly = poly;
+	return shape;
+}//Can be a polygon of less than three points, and in that case, only points should be drawn, if there are any.
+//Must be paired with a free(ShapePoly*) always.
+
+void AddPointToPoly(ShapePoly* p, int16_t x, int16_t y)
+{
+	int8_t pN = p->pN + 1;
+	p->pX = realloc(p->pX, sizeof(int16_t) * pN);
+	p->pY = realloc(p->pY, sizeof(int16_t) * pN);
+	
+	p->pX[p->pN] = x;
+	p->pY[p->pN] = y;
+	p->pN = pN;
+}
+
 void RenderShape(ShapesUnion shape)
 {
 	if(shape.type == BOX)
@@ -43,6 +92,13 @@ void RenderShape(ShapesUnion shape)
 	else if(shape.type == CIRCLE)
 		filledCircleRGBA(gRenderer, shape.circle->xC, shape.circle->yC, shape.circle->rad, 
 			shape.circle->r, shape.circle->g, shape.circle->b, shape.circle->a);
+	else if(shape.type == POLY)
+	{
+		if(shape.poly->pN >= 3)
+			polygonRGBA(gRenderer, shape.poly->pX, shape.poly->pY, shape.poly->pN, 
+				shape.poly->r, shape.poly->g, shape.poly->b, shape.poly->a);
+	}
+		
 }
 
 void DestroyShape(ShapesUnion shape)
@@ -51,6 +107,8 @@ void DestroyShape(ShapesUnion shape)
 		free(shape.box);
 	else if(shape.type == CIRCLE)
 		free(shape.circle);
+	else if(shape.type == POLY)
+		free(shape.poly);
 	
 	shape.type = NONE;
 }
