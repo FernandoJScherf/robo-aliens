@@ -95,7 +95,7 @@ void RenderShape(ShapesUnion shape)
 	else if(shape.type == POLY)
 	{
 		if(shape.poly->pN >= 3)
-			polygonRGBA(gRenderer, shape.poly->pX, shape.poly->pY, shape.poly->pN, 
+			filledPolygonRGBA(gRenderer, shape.poly->pX, shape.poly->pY, shape.poly->pN, 
 				shape.poly->r, shape.poly->g, shape.poly->b, shape.poly->a);
 	}
 		

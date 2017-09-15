@@ -36,7 +36,7 @@ typedef struct
 	int16_t*			pX;
 	int16_t*			pY;
 	int8_t 				pN;			//Total of points.
-	int8_t				filled;		//If filled or not. 1 is filled, 0 is not.
+	int8_t				filled;		//If filled or not. 1 is filled, 0 is not. TO DO: Maybe they are all filled and this is not necessary.
 	int8_t				r;
 	int8_t				g;
 	int8_t				b;

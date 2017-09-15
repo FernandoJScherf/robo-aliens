@@ -4,6 +4,16 @@
 
 #define UNI SCREEN_WIDTH / 64
 
+typedef enum
+{
+	NONESELECTED,
+	POLYCREATE,
+	POLYMODIFY,
+	REDMODIFY,
+	GREENMODIFY,
+	BLUEMODIFY
+}SelectedStateEnum;
+
 StatesEnum UpdateAndRenderObjectEditor(double dT)
 {
 	static TTF_Font* textFont;
@@ -12,8 +22,6 @@ StatesEnum UpdateAndRenderObjectEditor(double dT)
 	static SubStatesEnum subState = Load;
 	
 	static ShapesUnion* shapeArray;
-	
-	static float totalTimeClick = 0.0;
 	
 	if(subState == Load)
 	{
@@ -26,14 +34,23 @@ StatesEnum UpdateAndRenderObjectEditor(double dT)
 		//Every member of every element in shapeArray should be initialized to zero.
 		
 		//Make interface:
-		shapeArray[0] = MakeBox(UNI * 54, UNI * 4, UNI * 2, UNI * 2, 127, 0, 0, 255);
+		shapeArray[0] = MakeBox(UNI * 54, UNI * 4, UNI * 2, UNI * 2, 127, 0, 0, 255);	//Create Polygon.
 		shapeArray[1] = MakeCircle(UNI * 55, UNI * 8, UNI, 0, 127, 0, 255);
+		shapeArray[2] = MakeBox(UNI * 58, UNI * 4, UNI * 2, UNI * 2, 127, 127, 0, 255);	//Activate / Deactivate "Snap" between points.
 	}
 	
 	////////Every Frame:
-	static ShapesEnum selectedShape = NONE;
-	static int workingOnPoly;
-	if(gMouseStates.left == SDL_PRESSED)	//If just clicked or if mouse is kept being pressed.
+	static SelectedStateEnum selectedState = NONE;
+	static int16_t workingOnPoly = 0;
+	
+	static float totalTimeClick = 0.0;
+	
+	static int16_t savedX, savedY;
+	
+	static int8_t snapState = 0;	// 0 is false.
+	
+	//MOUSE CLICKS:
+	if(gMouseStates.left == SDL_PRESSED)	//If just LEFT clicked or if mouse is kept being pressed.
 	{
 		
 		int8_t divisor = 2;
@@ -42,10 +59,10 @@ StatesEnum UpdateAndRenderObjectEditor(double dT)
 			uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
 		if(totalTimeClick == 0.0)
 		{			
-			printf("totalTimeClick %f\n", totalTimeClick);
+			//~ printf("totalTimeClick %f\n", totalTimeClick);
 			if(CheckCollision(rectMouse, shapeArray[0]))
 			{
-				printf("Selected the constructiong polygon tool");
+				//~ printf("Selected the constructiong polygon tool");
 				for(int i = 0; i < MAX_SHAPES; i++)
 				{
 					if(shapeArray[i].type == NONE)		//If we found an empty space in the array.
@@ -55,39 +72,36 @@ StatesEnum UpdateAndRenderObjectEditor(double dT)
 						break;		//I FORGOT TO PUT THIS BREAK WHAT THE FUUUUUUCK.
 					}
 				}
-				selectedShape = BOX;
+				selectedState = POLYCREATE;
 			}
-			else if (CheckCollision(rectMouse, shapeArray[1]))
-				selectedShape = CIRCLE;
+			else if(CheckCollision(rectMouse, shapeArray[1]))
+				selectedState = POLYMODIFY;
+			else if(CheckCollision(rectMouse, shapeArray[2]))
+				snapState ^= 0b00000001;	//XOR to invert bit. Changes to 1 if 0, changes to 0 if 1.
 			else
-			{
-				printf("Click outside of button.\n");
-				for(int i = 0; i < MAX_SHAPES; i++)
+				if(selectedState == POLYCREATE)
 				{
-					printf("shapeArray[i].type == %i\n", shapeArray[i].type);
-					if(shapeArray[i].type == NONE)		//If we found an empty space in the array.
+					//~ printf("Click outside of button.\n");
+					for(int i = 0; i < MAX_SHAPES; i++)
 					{
-						printf("Found empty shape.\n");
-						if(selectedShape == BOX)
+						//~ printf("shapeArray[i].type == %i\n", shapeArray[i].type);
+						if(shapeArray[i].type == NONE)		//If we found an empty space in the array.
 						{
 							SDL_Color textColor = { 127, 0, 0, 255 };	
 							textShapes = MakeText("Constructing Polygon", textFont, textColor, UNI * 53, UNI);
 							AddPointToPoly(shapeArray[workingOnPoly].poly, gMouseStates.x, gMouseStates.y);
 							int16_t w = uniDiv * divisor;
 							int16_t h = w;
-							shapeArray[i] = MakeBox(gMouseStates.x - w / 2, gMouseStates.y - h / 2, 
-								w, h, 127, 0, 0, 255);
-							break;
-						}
-						else if(selectedShape == CIRCLE)
-						{
-							shapeArray[i] = MakeCircle(gMouseStates.x, gMouseStates.y, 
-								uniDiv * divisor, 127, 0, 0, 255);
 							break;
 						}
 					}
 				}
-			}
+				else if(selectedState == POLYMODIFY)
+				{
+					//Check collision between the point of the mouse and every polygon.
+					//Change workingOnPoly to the index of the poly on shapeArray.
+					//Enjoy.
+				}
 			
 		}
 		totalTimeClick += dT;
@@ -95,18 +109,175 @@ StatesEnum UpdateAndRenderObjectEditor(double dT)
 		RenderShape(rectMouse);
 		DestroyShape(rectMouse);
 	}
+	else if(gMouseStates.middle == SDL_PRESSED)
+	{
+		if(totalTimeClick == 0.0)
+		{
+			savedX = gMouseStates.x;
+			savedY = gMouseStates.y;
+		}
+		if(selectedState == POLYCREATE)
+		{
+			for(int i = 0; i < shapeArray[workingOnPoly].poly->pN; i++)
+			{
+				shapeArray[workingOnPoly].poly->pX[i] += gMouseStates.x - savedX;
+				shapeArray[workingOnPoly].poly->pY[i] += gMouseStates.y - savedY;
+			}
+			savedX = gMouseStates.x;
+			savedY = gMouseStates.y;
+		}
+		totalTimeClick += dT;
+	}
+	else if(gMouseStates.right == SDL_PRESSED)
+	{
+		if(totalTimeClick == 0.0)
+		{
+			savedX = gMouseStates.x;
+			savedY = gMouseStates.y;
+		}
+		if(selectedState == POLYCREATE)
+		{
+			int8_t divisor = 2;
+			int16_t uniDiv = UNI / divisor;
+			ShapesUnion rectMouse = MakeBox(gMouseStates.x - uniDiv, gMouseStates.y - uniDiv, 
+				uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
+
+			for(int i = 0; i < shapeArray[workingOnPoly].poly->pN; i++)
+			{
+				ShapesUnion rect = MakeBox(shapeArray[workingOnPoly].poly->pX[i] - uniDiv, 
+					shapeArray[workingOnPoly].poly->pY[i] - uniDiv, 
+					uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
+				if(CheckCollision(rectMouse, rect))
+				{//Ok, now, in case the mouse pointer collided with one of the polygon's points:
+					shapeArray[workingOnPoly].poly->pX[i] += gMouseStates.x - savedX;
+					shapeArray[workingOnPoly].poly->pY[i] += gMouseStates.y - savedY;
+					
+					//Now that I'm moving one of the points individually, I will see if it's close to 
+					//other points in other polygons, to create an "snap" capability, only if "snap" is active:
+					if(snapState)
+					{
+						for(int j = 0; j < MAX_SHAPES; j++)
+						{
+							if(shapeArray[j].type == POLY && j != workingOnPoly)	//If we found a polygon in the array, different that the one we are working with.!
+							{
+								//We go through the points and see if they collide with the one we are moving:
+								for(int k = 0; k < shapeArray[j].poly->pN; k++)
+								{
+									ShapesUnion rectB = MakeBox(shapeArray[j].poly->pX[k] - uniDiv, 
+										shapeArray[j].poly->pY[k] - uniDiv, 
+										uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
+									if(CheckCollision(rect, rectB))	//If they do collide:
+									{
+										shapeArray[workingOnPoly].poly->pX[i] = shapeArray[j].poly->pX[k];
+										shapeArray[workingOnPoly].poly->pY[i] = shapeArray[j].poly->pY[k];
+										
+										break;
+									}									
+										
+									DestroyShape(rectB);
+								}
+							}
+						}
+					}
+					
+					break;
+				}
+				DestroyShape(rect);
+			}
+			savedX = gMouseStates.x;
+			savedY = gMouseStates.y;
+				
+			RenderShape(rectMouse);
+			DestroyShape(rectMouse);
+		}
+		totalTimeClick += dT;
+	}
+	//BUTTONS BEING PRESSED:
+	else if(gKeyStates.left == SDL_PRESSED)
+	{
+		if(totalTimeClick == 0.0)
+		{
+			if(selectedState == POLYCREATE)
+			{
+				int16_t savedFirstPosX = shapeArray[workingOnPoly].poly->pX[0];
+				int16_t savedFirstPosY = shapeArray[workingOnPoly].poly->pY[0];
+				int8_t	savedPN = shapeArray[workingOnPoly].poly->pN;
+				for(int i = 0; i < (savedPN - 1); i++)
+				{
+					shapeArray[workingOnPoly].poly->pX[i] = shapeArray[workingOnPoly].poly->pX[i + 1];
+					shapeArray[workingOnPoly].poly->pY[i] = shapeArray[workingOnPoly].poly->pY[i + 1];
+				}
+				shapeArray[workingOnPoly].poly->pX[savedPN - 1] = savedFirstPosX;
+				shapeArray[workingOnPoly].poly->pY[savedPN - 1] = savedFirstPosY;
+			}
+		}
+		totalTimeClick += dT;
+	}
+	else if(gKeyStates.right == SDL_PRESSED)
+	{
+		if(totalTimeClick == 0.0)
+		{
+			if(selectedState == POLYCREATE)
+			{
+				int8_t	savedPN = shapeArray[workingOnPoly].poly->pN;
+				int16_t savedLastPosX = shapeArray[workingOnPoly].poly->pX[savedPN - 1];
+				int16_t savedLastPosY = shapeArray[workingOnPoly].poly->pY[savedPN - 1];
+				for(int i = savedPN - 1; i > 0; i--)
+				{
+					shapeArray[workingOnPoly].poly->pX[i] = shapeArray[workingOnPoly].poly->pX[i - 1];
+					shapeArray[workingOnPoly].poly->pY[i] = shapeArray[workingOnPoly].poly->pY[i - 1];
+				}
+				shapeArray[workingOnPoly].poly->pX[0] = savedLastPosX;
+				shapeArray[workingOnPoly].poly->pY[0] = savedLastPosY;
+			}
+		}
+		totalTimeClick += dT;
+	}
 	else
 		totalTimeClick = 0.0;
+	
+	//////Render:
+	if(selectedState == POLYCREATE)
+	{
+		
+		//Render squares in points of polygons:
+		int8_t divisor = 2;
+		int16_t uniDiv = UNI / divisor;
+		for(int i = 0; i < shapeArray[workingOnPoly].poly->pN; i++)
+		{
+			if(i == 0)
+			{
+				ShapesUnion circ = MakeCircle(shapeArray[workingOnPoly].poly->pX[i],
+					shapeArray[workingOnPoly].poly->pY[i], uniDiv, 0, 0, 255, 255);
+				RenderShape(circ);
+				DestroyShape(circ);
+			}
+			else if(i == shapeArray[workingOnPoly].poly->pN - 1)
+			{
+				ShapesUnion circ = MakeCircle(shapeArray[workingOnPoly].poly->pX[i],
+					shapeArray[workingOnPoly].poly->pY[i], uniDiv, 255, 0, 0, 255);
+				RenderShape(circ);
+				DestroyShape(circ);
+			}
+			else
+			{
+				ShapesUnion rect = MakeBox(shapeArray[workingOnPoly].poly->pX[i] - uniDiv, 
+					shapeArray[workingOnPoly].poly->pY[i] - uniDiv, 
+					uniDiv * divisor, uniDiv * divisor, 127, 0, 0, 255);
+				RenderShape(rect);
+				DestroyShape(rect);
+			}
+		}
+	}
 	
 	//Render Interface:
 	RenderText(textShapes);
 	vlineRGBA(gRenderer, UNI * 52, 0, SCREEN_HEIGHT, 0, 0, 0, 255);
-	for(int i = 0; i < MAX_SHAPES; i++)
+	for(int i = 0; i < MAX_SHAPES; i++)	//Render Interface and everything else too:
 	{
-		if(shapeArray[i].type != NONE)
-			RenderShape(shapeArray[i]);		//If we found an occupied space in the array.
+		if(shapeArray[i].type != NONE)	//If we found an occupied space in the array.
+			RenderShape(shapeArray[i]);		
 	}
-	
 	
 	if(subState == Exit)
 	{
